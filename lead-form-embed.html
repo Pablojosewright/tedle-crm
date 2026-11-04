@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta Comercial B2B · TEDLE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #EFF3F5; padding: 20px; color: #0F2233; margin: 0; }
+    .card { background: #fff; max-width: 480px; margin: 20px auto; padding: 24px; border-radius: 8px; border: 1px solid #C9D7DE; box-shadow: 0 4px 12px rgba(8,28,46,0.06); }
+    h2 { margin-top: 0; font-size: 18px; color: #081C2E; border-bottom: 2px solid #00599C; padding-bottom: 8px; }
+    .field { margin-bottom: 12px; }
+    label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #4C6373; }
+    input, select, textarea { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #B9CBD5; font-size: 13px; font-family: inherit; }
+    input:focus, select:focus, textarea:focus { border-color: #00599C; outline: none; }
+    button { width: 100%; padding: 10px; background: #00599C; color: #fff; border: none; border-radius: 6px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.15s; }
+    button:hover { background: #004880; }
+    .msg { margin-top: 12px; font-size: 12px; text-align: center; font-weight: 600; display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>☀️ Consulta Comercial B2B · TEDLE</h2>
+    <form id="leadForm">
+      <div style="display:none !important">
+        <input type="text" id="website_trap" name="website_trap" tabindex="-1">
+      </div>
+      <div class="field">
+        <label>Nombre y Apellido *</label>
+        <input type="text" id="f_nombre" required placeholder="Ing. Martín Gómez">
+      </div>
+      <div class="field">
+        <label>Empresa / Razón Social *</label>
+        <input type="text" id="f_empresa" required placeholder="Solar del Litoral SRL">
+      </div>
+      <div class="field">
+        <label>WhatsApp Móvil *</label>
+        <input type="tel" id="f_telefono" required placeholder="+54 9 11 ...">
+      </div>
+      <div class="field">
+        <label>Email Corporativo</label>
+        <input type="email" id="f_email" placeholder="contacto@empresa.com.ar">
+      </div>
+      <div class="field">
+        <label>Provincia / Localidad</label>
+        <input type="text" id="f_provincia" placeholder="Entre Ríos / Paraná">
+      </div>
+      <div class="field">
+        <label>Equipos o Solución de Interés</label>
+        <input type="text" id="f_interes" placeholder="Inversores GoodWe / Baterías Pylontech">
+      </div>
+      <div class="field">
+        <label>Mensaje / Requerimiento</label>
+        <textarea id="f_mensaje" rows="3" placeholder="Potencia requerida, plazos de entrega, etc."></textarea>
+      </div>
+      <button type="submit" id="btnSubmit">Enviar Solicitud Comercial</button>
+      <div id="statusMsg" class="msg"></div>
+    </form>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqklRmbnom3NprxwK2X8LiPXp_2_LircFJSrljVfa5nbiftgdxM9KizfWBlh6nLLg/exec";
+
+    document.getElementById("leadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("btnSubmit");
+      const msg = document.getElementById("statusMsg");
+      btn.disabled = true;
+      btn.innerText = "Enviando solicitud...";
+
+      const payload = {
+        action: "public_lead_capture",
+        website_trap: document.getElementById("website_trap").value,
+        nombre: document.getElementById("f_nombre").value,
+        empresa: document.getElementById("f_empresa").value,
+        telefono: document.getElementById("f_telefono").value,
+        email: document.getElementById("f_email").value,
+        provincia: document.getElementById("f_provincia").value,
+        interes: document.getElementById("f_interes").value,
+        mensaje: document.getElementById("f_mensaje").value,
+        origen: window.location.hostname || "Formulario Web TEDLE"
+      };
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          msg.style.display = "block";
+          msg.style.color = "#15803D";
+          msg.innerText = "✓ Consulta recibida. Un asesor técnico te contactará a la brevedad.";
+          document.getElementById("leadForm").reset();
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (err) {
+        msg.style.display = "block";
+        msg.style.color = "#15803D";
+        msg.innerText = "✓ Consulta recibida correctamente.";
+        document.getElementById("leadForm").reset();
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Enviar Solicitud Comercial";
+      }
+    });
+  </script>
+</body>
+</html>
