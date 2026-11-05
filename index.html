@@ -2185,17 +2185,23 @@ function syncFromSheets(){
     let added = 0, updated = 0;
     const rows = [].concat(data.clientes || [], data.cotizaciones || [], data.leads || []);
     rows.forEach(r => {
-      const cli = r.Cliente || r.Nombre || "";
-      const emp = r.Empresa || cli;
+      const cli = r.Cliente || r.Nombre || r["Cliente / Razón Social"] || "";
+      const emp = r.Empresa || r["Cliente / Razón Social"] || cli;
       if(!cli && !emp) return;
       const ph = parseAndNormalizePhone(r.WhatsApp || r.Telefono || r["Teléfono"] || "", true);
       const em = cleanEmail(r.Email || "");
-      const nro = String(r["Última cotización"] || r["Nro Cotización"] || "").replace(/\.0$/, "");
-      const usd = String(r["Monto USD"] || "").replace(/^0(\.0)?$/, "");
-      const idx = DB.findIndex(x => (ph.wa && x.WhatsApp === ph.wa) || (em && x.Email === em) || (emp && slug(x.Empresa) === slug(emp)));
+      const nro = String(r["Nro Proforma"] || r["Última cotización"] || r["Nro Cotización"] || "").replace(/\.0$/, "");
+      let rawUsd = String(r["Monto USD"] || "").replace(/[^0-9.]/g, "");
+      const usd = rawUsd ? String(parseFloat(rawUsd) || "") : "";
+      const link = r["Link Calculadora"] || r["Link Proforma"] || "";
+      const est = (r.Estado === "EMITIDA" || r.Estado === "BORRADOR" || !r.Estado) ? "Cotizado" : r.Estado;
+
+      const idx = DB.findIndex(x => (ph.wa && x.WhatsApp === ph.wa) || (em && x.Email === em) || (emp && slug(x.Empresa) === slug(emp)) || (cli && slug(x.Nombre) === slug(cli)));
       if(idx >= 0){
-        if(nro && !DB[idx].NroCotizacion) DB[idx].NroCotizacion = nro;
-        if(usd && !DB[idx].MontoUSD) DB[idx].MontoUSD = usd;
+        if(nro) DB[idx].NroCotizacion = nro;
+        if(usd) DB[idx].MontoUSD = usd;
+        if(link) DB[idx].LinkProforma = link;
+        DB[idx].Estado = est;
         if(ph.wa && !DB[idx].WhatsApp) DB[idx].WhatsApp = ph.wa;
         if(em && !DB[idx].Email) DB[idx].Email = em;
         updated++;
@@ -2212,16 +2218,17 @@ function syncFromSheets(){
           Ciudad: "",
           Vertical: "Canal Solar / Integradores",
           Segmento: "Cliente/Oportunidad",
-          Estado: r.Estado || "Cotizado",
+          Estado: est,
           Prioridad: "A",
           ScoreB2B: 88,
-          Interes: r.Necesidad || r.Productos || "Cotización Sheets",
+          Interes: r.Necesidad || r.Productos || "Cotización Calculadora",
           NroCotizacion: nro,
+          LinkProforma: link,
           MontoUSD: usd,
           ProximaFecha: todayISO(0),
           ProximaAccion: r["Próximo paso"] || "Seguimiento comercial",
           Notas: r.Observaciones || "",
-          Fuente: "Google Sheets Sync"
+          Fuente: "Calculadora TEDLE"
         });
         added++;
       }
